@@ -21,7 +21,7 @@ To upgrade to the latest version you can simply run the install command above.
 To use wrkrscope you'll need to initialise it with the paths to your worker projects first:
 
 ```
-wrkrscope init --path=<path> --path=<path>
+wrkrscope init --path=<path-to-your-worker-project> --path=<path-to-your-worker-project>
 ```
 
 You can pass the path flag as many times as you like

@@ -14,7 +14,7 @@ interface KVValue {
 }
 
 export interface KVResponse {
-    name: string;
+    id: string;
     values: KVValue[];
 }
 
@@ -57,7 +57,7 @@ export const getKV = async (path: string): Promise<KVResponse[]> => {
         }
 
         response.push({
-            name: binding.id,
+            id: binding.id,
             values: finalEntries
         });
     }

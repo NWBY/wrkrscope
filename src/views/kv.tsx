@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { KVResponse } from "@/lib/cf/kv";
 import type { ProjectResponse } from "@/lib/cf/projects";
+import type { KvParams } from "@/lib/param";
 import { createRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -11,14 +12,22 @@ export const kvRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/kv',
     component: KV,
+    validateSearch: (search: Record<string, unknown>): KvParams => {
+        return {
+            project: (search.project as string) || '',
+            id: (search.id as string) || '',
+        }
+    },
 })
 
 
 function KV() {
+    const { project, id } = kvRoute.useSearch();
+
     const [kv, setKV] = useState<KVResponse[]>([]);
     const [projects, setProjects] = useState<ProjectResponse>({ projects: [] });
-    const [selectedKV, setSelectedKV] = useState<string>("");
-    const [selectedProject, setSelectedProject] = useState<string>("");
+    const [selectedKV, setSelectedKV] = useState<string>(id);
+    const [selectedProject, setSelectedProject] = useState<string>(project);
 
     useEffect(() => {
         fetch("/api/projects")
@@ -27,6 +36,15 @@ function KV() {
                 setProjects(data);
             });
     }, []);
+
+    useEffect(() => {
+        if (!selectedProject) return;
+        fetch(`/api/kv?project=${selectedProject}`)
+            .then(res => res.json())
+            .then(data => {
+                setKV(data);
+            });
+    }, [selectedProject]);
 
     const handleSelectProject = (value: string) => {
         setSelectedProject(value);
@@ -38,7 +56,7 @@ function KV() {
             });
     }
 
-    const selectedKVItem = kv.find(kv => kv.name === selectedKV);
+    const selectedKVItem = kv.find(kv => kv.id === selectedKV);
 
     return (
         <div className="p-4">
@@ -62,7 +80,7 @@ function KV() {
                     </SelectTrigger>
                     <SelectContent>
                         {kv.map(kv => (
-                            <SelectItem key={kv.name} value={kv.name}>{kv.name}</SelectItem>
+                            <SelectItem key={kv.id} value={kv.id}>{kv.id}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

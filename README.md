@@ -2,7 +2,7 @@
 
 ![wrkrscope](/assets/wrkrscope.png)
 
-Browser based explorer for local wrangler projects
+Browser based telescope for visibility of local wrangler projects
 
 ## Installation
 

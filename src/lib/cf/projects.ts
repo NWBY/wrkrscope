@@ -1,10 +1,10 @@
 import { getConfig } from "../config";
-import type { D1Binding, DurableObjectBinding, KvBinding, R2Binding } from "./bindings";
+import type { AssetsBinding, D1Binding, DurableObjectBinding, KvBinding, R2Binding } from "./bindings";
 import { getWranglerConfig } from "./utils";
 
 interface Binding {
-    type: "kv" | "d1" | "r2" | "durable_objects";
-    values: (KvBinding | D1Binding | R2Binding | DurableObjectBinding)[];
+    type: "kv" | "d1" | "r2" | "durable_objects" | "assets";
+    values: (KvBinding | D1Binding | R2Binding | DurableObjectBinding | AssetsBinding)[];
 }
 
 interface Project {
@@ -96,6 +96,18 @@ export const getProject = async (path: string): Promise<Project | null> => {
         bindings.push({
             type: "durable_objects",
             values: durableObjectBindings,
+        });
+    }
+
+    if (wranglerConfig.assets) {
+        let assetsBindings: AssetsBinding[] = [];
+        assetsBindings.push({
+            binding: wranglerConfig.assets.binding,
+            directory: wranglerConfig.assets.directory,
+        });
+        bindings.push({
+            type: "assets",
+            values: assetsBindings,
         });
     }
 

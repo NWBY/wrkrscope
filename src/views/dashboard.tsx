@@ -1,6 +1,6 @@
 import { rootRoute } from "@/App";
 import { Card, CardHeader, CardContent, CardFooter, CardDescription, CardTitle } from "@/components/ui/card";
-import type { D1Binding, DurableObjectBinding, KvBinding, R2Binding } from "@/lib/cf/bindings";
+import type { AssetsBinding, D1Binding, DurableObjectBinding, KvBinding, R2Binding } from "@/lib/cf/bindings";
 import type { KVResponse } from "@/lib/cf/kv";
 import type { ProjectResponse } from "@/lib/cf/projects";
 import { createRoute, Link } from "@tanstack/react-router";
@@ -34,10 +34,12 @@ function Dashboard() {
                 return <Folder size={16} />;
             case "durable_objects":
                 return <Globe size={16} />;
+            case "assets":
+                return <FolderCode size={16} />;
         }
     }
 
-    const getBindingLink = (type: "kv" | "d1" | "r2" | "durable_objects", project: string, binding: KvBinding | D1Binding | R2Binding | DurableObjectBinding) => {
+    const getBindingLink = (type: "kv" | "d1" | "r2" | "durable_objects" | "assets", project: string, binding: KvBinding | D1Binding | R2Binding | DurableObjectBinding | AssetsBinding) => {
         switch (type) {
             case "kv":
                 return (
@@ -56,6 +58,10 @@ function Dashboard() {
                     <Link to="/durable-objects" search={{ project: project, id: (binding as DurableObjectBinding).name }}>
                         <p className="text-sm text-muted-foreground mb-2">{(binding as DurableObjectBinding).class_name}</p>
                     </Link>
+                );
+            case "assets":
+                return (
+                    <p className="text-sm text-muted-foreground mb-2">{(binding as AssetsBinding).binding}</p>
                 );
             // case "r2":
             //     return (
@@ -89,7 +95,7 @@ function Dashboard() {
                                         <div key={binding.type} className="flex items-start py-2 gap-x-2">
                                             <p>{getBindingIcon(binding.type)}</p>
                                             <div>
-                                                {binding.values.map((value: KvBinding | D1Binding | R2Binding | DurableObjectBinding) => (
+                                                {binding.values.map((value: KvBinding | D1Binding | R2Binding | DurableObjectBinding | AssetsBinding) => (
                                                     getBindingLink(binding.type, project.path, value)
                                                 ))}
                                             </div>

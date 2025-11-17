@@ -18,3 +18,8 @@ export interface DurableObjectBinding {
     class_name: string;
     name: string;
 }
+
+export interface AssetsBinding {
+    binding: string;
+    directory: string;
+}

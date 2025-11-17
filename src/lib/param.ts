@@ -5,3 +5,7 @@ export interface CommonParams {
 export interface KvParams extends CommonParams {
     id: string;
 }
+
+export interface D1Params extends CommonParams {
+    filename: string;
+}

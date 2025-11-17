@@ -13,3 +13,8 @@ export interface R2Binding {
     binding: string;
     bucket_name: string;
 }
+
+export interface DurableObjectBinding {
+    class_name: string;
+    name: string;
+}

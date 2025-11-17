@@ -2,6 +2,7 @@ import {
     Calendar,
     Database,
     DatabaseZap,
+    Globe,
     Home,
     Inbox,
     Key,
@@ -47,10 +48,18 @@ const items = [
         identifier: "kv",
         icon: Key,
     },
+    {
+        title: "Durable Objects",
+        href: "/durable-objects",
+        identifier: "durable-objects",
+        icon: Globe,
+    },
 ];
 
 export function AppSidebar() {
     const location = useLocation()
+
+    console.log(location.pathname);
 
     return (
         <Sidebar variant="inset">
@@ -64,7 +73,7 @@ export function AppSidebar() {
                                     <SidebarMenuButton
                                         asChild
                                         className={
-                                            location.pathname === `/${item.href}`
+                                            location.pathname === item.href
                                                 ? "bg-orange-600 text-primary-foreground hover:bg-orange-600/90 hover:text-primary-foreground"
                                                 : ""
                                         }

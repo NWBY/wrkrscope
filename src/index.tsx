@@ -7,6 +7,7 @@ import { configExists, createConfig, getConfig } from "./lib/config";
 import packageJson from "../package.json";
 import { getProjects } from "./lib/cf/projects";
 import { getD1, queryD1Db, type D1Response } from "./lib/cf/d1";
+import { getDurableObjectsSql, queryDoDb, type DurableObjectResponse } from "./lib/cf/durable-objects";
 
 const { values, positionals } = parseArgs({
     args: Bun.argv,
@@ -84,6 +85,38 @@ if (positionals.length == 2) {
                 }
 
                 return Response.json(d1);
+            },
+            "/api/durable-objects": async req => {
+                const url = new URL(req.url);
+                const project = url.searchParams.get("project") || "";
+                if (!project) {
+                    console.error("No project specified");
+                    return Response.json([]);
+                }
+
+                // const className = url.searchParams.get("className") || "";
+                // if (!className) {
+                //     console.error("No class name specified");
+                //     return Response.json([]);
+                // }
+
+                const table = url.searchParams.get("table") || "";
+                const db = url.searchParams.get("db") || "";
+                if (table && db) {
+                    const data = await queryDoDb(project, db, table);
+                    return Response.json(data);
+                }
+
+
+                let durableObjects: DurableObjectResponse[] = [];
+                try {
+                    durableObjects = await getDurableObjectsSql(project);
+                } catch (error) {
+                    console.error(error);
+                    return Response.json([]);
+                }
+
+                return Response.json(durableObjects);
             },
             "/api/ws": async req => {
                 // upgrade the request to a WebSocket

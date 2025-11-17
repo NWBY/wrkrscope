@@ -1,10 +1,10 @@
 import { rootRoute } from "@/App";
 import { Card, CardHeader, CardContent, CardFooter, CardDescription, CardTitle } from "@/components/ui/card";
-import type { D1Binding, KvBinding, R2Binding } from "@/lib/cf/bindings";
+import type { D1Binding, DurableObjectBinding, KvBinding, R2Binding } from "@/lib/cf/bindings";
 import type { KVResponse } from "@/lib/cf/kv";
 import type { ProjectResponse } from "@/lib/cf/projects";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Database, Folder, FolderCode, Key } from "lucide-react";
+import { Database, Folder, FolderCode, Globe, Key } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const dashboardRoute = createRoute({
@@ -32,21 +32,29 @@ function Dashboard() {
                 return <Database size={16} />;
             case "r2":
                 return <Folder size={16} />;
+            case "durable_objects":
+                return <Globe size={16} />;
         }
     }
 
-    const getBindingLink = (type: "kv" | "d1" | "r2", project: string, binding: KvBinding | D1Binding | R2Binding) => {
+    const getBindingLink = (type: "kv" | "d1" | "r2" | "durable_objects", project: string, binding: KvBinding | D1Binding | R2Binding | DurableObjectBinding) => {
         switch (type) {
             case "kv":
                 return (
                     <Link to="/kv" search={{ project: project, id: (binding as KvBinding).id }}>
-                        <p className="text-sm text-muted-foreground mb-2">{binding.binding}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{(binding as KvBinding).binding}</p>
                     </Link>
                 );
             case "d1":
                 return (
                     <Link to="/d1" search={{ project: project, id: (binding as D1Binding).database_id }}>
-                        <p className="text-sm text-muted-foreground mb-2">{binding.binding}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{(binding as D1Binding).binding}</p>
+                    </Link>
+                );
+            case "durable_objects":
+                return (
+                    <Link to="/durable-objects" search={{ project: project, id: (binding as DurableObjectBinding).name }}>
+                        <p className="text-sm text-muted-foreground mb-2">{(binding as DurableObjectBinding).class_name}</p>
                     </Link>
                 );
             // case "r2":
@@ -81,7 +89,7 @@ function Dashboard() {
                                         <div key={binding.type} className="flex items-start py-2 gap-x-2">
                                             <p>{getBindingIcon(binding.type)}</p>
                                             <div>
-                                                {binding.values.map((value: KvBinding | D1Binding | R2Binding) => (
+                                                {binding.values.map((value: KvBinding | D1Binding | R2Binding | DurableObjectBinding) => (
                                                     getBindingLink(binding.type, project.path, value)
                                                 ))}
                                             </div>

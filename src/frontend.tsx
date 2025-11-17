@@ -12,8 +12,9 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { kvRoute } from "./views/kv";
 import { dashboardRoute } from "./views/dashboard";
 import { d1Route } from "./views/d1";
+import { durableObjectsRoute } from "./views/durable-objects";
 
-const routeTree = rootRoute.addChildren([dashboardRoute, kvRoute, d1Route])
+const routeTree = rootRoute.addChildren([dashboardRoute, kvRoute, d1Route, durableObjectsRoute])
 
 const router = createRouter({ routeTree })
 

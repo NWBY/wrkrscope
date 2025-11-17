@@ -117,7 +117,26 @@ function D1() {
                         </Table>
                     </div>
                 </TabsContent>
-                <TabsContent value="schema">Change your password here.</TabsContent>
+                <TabsContent value="schema">
+                    <div className="flex flex-col gap-y-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Type</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tableData.columns.map(column => (
+                                    <TableRow key={column.name}>
+                                        <TableCell>{column.name}</TableCell>
+                                        <TableCell>{column.type}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
             </Tabs>
         </div>
     )

@@ -34,3 +34,7 @@ After you've run the `init` command, just run: `wrkrscope`
 
 - `wrkrscope version` - print the version of wrkrscope
 - `wrkrscope config` - print the JSON config file
+
+## Known Issues
+
+- When working with D1 locally it's not possible to map the DB Binding name to the local sqlite files so we have to show the sqlite file name which is a random string of letters

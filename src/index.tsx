@@ -2,12 +2,13 @@ import { serve, type ServerWebSocket } from "bun";
 import index from "./index.html";
 import { parseArgs } from "util";
 import { getKV, type KVResponse } from "./lib/cf/kv";
-import type { RequestResponse } from "./lib/cf/request";
+import type { RequestResponse, StoredRequest } from "./lib/cf/request";
 import { configExists, createConfig, getConfig } from "./lib/config";
 import packageJson from "../package.json";
 import { getProjects } from "./lib/cf/projects";
 import { getD1, queryD1Db, type D1Response } from "./lib/cf/d1";
 import { getDurableObjectsSql, queryDoDb, type DurableObjectResponse } from "./lib/cf/durable-objects";
+import { TrafficCapture } from "./lib/capture/capture";
 
 const { values, positionals } = parseArgs({
     args: Bun.argv,
@@ -30,6 +31,70 @@ if (positionals.length == 2) {
     };
 
     const wsClients = new Set<ServerWebSocket<any>>();
+
+    // Initialize traffic capture
+    const capture = new TrafficCapture({
+        onRequest: (request: StoredRequest) => {
+            console.log("Captured request:", JSON.stringify(request, null, 2));
+            requests.requests.unshift(request);
+            requests.total += 1;
+
+            // Broadcast to all websocket clients
+            const message = JSON.stringify({
+                type: "new_request",
+                request: request,
+            });
+            wsClients.forEach((client) => {
+                try {
+                    client.send(message);
+                } catch (error) {
+                    console.error("Error sending websocket message:", error);
+                }
+            });
+        },
+        onResponse: (request: StoredRequest) => {
+            // Find the existing request (it's already updated by reference in the parser)
+            const index = requests.requests.findIndex((r) => r.id === request.id);
+            if (index === -1) {
+                // If not found, add it (shouldn't happen normally, but handle edge case)
+                requests.requests.unshift(request);
+                requests.total += 1;
+            }
+
+            // Broadcast to all websocket clients
+            const message = JSON.stringify({
+                type: "response_received",
+                requestId: request.id,
+                response: {
+                    status: request.responseStatus,
+                    headers: request.responseHeaders,
+                    body: request.responseBody,
+                },
+            });
+            wsClients.forEach((client) => {
+                try {
+                    client.send(message);
+                } catch (error) {
+                    console.error("Error sending websocket message:", error);
+                }
+            });
+        },
+        onError: (error: Error) => {
+            console.error("Capture error:", error.message);
+            // Broadcast error to websocket clients
+            const message = JSON.stringify({
+                type: "capture_error",
+                error: error.message,
+            });
+            wsClients.forEach((client) => {
+                try {
+                    client.send(message);
+                } catch (error) {
+                    console.error("Error sending websocket message:", error);
+                }
+            });
+        },
+    });
 
     const server = serve({
         routes: {
@@ -126,15 +191,54 @@ if (positionals.length == 2) {
 
                 return new Response("Upgrade failed", { status: 500 });
             },
+            "/api/capture/start": async req => {
+                try {
+                    const url = new URL(req.url);
+                    const port = parseInt(url.searchParams.get("port") || "8787", 10);
+
+                    await capture.start(port);
+                    return Response.json({ success: true, message: "Capture started" });
+                } catch (error) {
+                    return Response.json(
+                        {
+                            success: false,
+                            error: error instanceof Error ? error.message : "Unknown error"
+                        },
+                        { status: 500 }
+                    );
+                }
+            },
+            "/api/capture/stop": async req => {
+                try {
+                    await capture.stop();
+                    return Response.json({ success: true, message: "Capture stopped" });
+                } catch (error) {
+                    return Response.json(
+                        {
+                            success: false,
+                            error: error instanceof Error ? error.message : "Unknown error"
+                        },
+                        { status: 500 }
+                    );
+                }
+            },
+            "/api/capture/status": async req => {
+                const status = capture.getStatus();
+                return Response.json(status);
+            },
         },
 
         websocket: {
             message(ws, message) {
-                ws.send("Hello, world!");
+                // Handle incoming websocket messages if needed
             },
             open(ws) {
                 wsClients.add(ws);
                 console.log("WebSocket connected");
+            },
+            close(ws) {
+                wsClients.delete(ws);
+                console.log("WebSocket disconnected");
             },
         },
 

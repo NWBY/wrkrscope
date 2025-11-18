@@ -7,6 +7,8 @@ import type { ProjectResponse } from "@/lib/cf/projects";
 import { createRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
 
 export const d1Route = createRoute({
     getParentRoute: () => rootRoute,
@@ -43,6 +45,14 @@ function D1() {
         setSelectedTable(value);
 
         fetch(`/api/d1?project=${selectedProject}&db=${selectedD1}&table=${value}`)
+            .then(res => res.json())
+            .then(data => {
+                setTableData(data);
+            });
+    }
+
+    const handleRefresh = () => {
+        fetch(`/api/d1?project=${selectedProject}&db=${selectedD1}&table=${selectedTable}`)
             .then(res => res.json())
             .then(data => {
                 setTableData(data);
@@ -94,6 +104,9 @@ function D1() {
                             ))}
                         </SelectContent>
                     </Select>
+                    <Button className="ml-2" onClick={handleRefresh} disabled={!selectedTable}>
+                        <RefreshCcw size={16} />
+                    </Button>
                 </div>
                 <TabsContent value="data">
                     <div className="flex flex-col gap-y-4">

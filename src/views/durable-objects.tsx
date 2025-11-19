@@ -7,6 +7,7 @@ import type { DurableObjectData, DurableObjectResponse } from "@/lib/cf/durable-
 import type { KVResponse } from "@/lib/cf/kv";
 import type { ProjectResponse } from "@/lib/cf/projects";
 import type { KvParams } from "@/lib/param";
+import type { DurableObjectRpc, RpcMethod } from "@/lib/rpc-extract";
 import { createRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -24,6 +25,8 @@ function DurableObjects() {
     const [selectedProject, setSelectedProject] = useState<string>("");
     const [selectedTable, setSelectedTable] = useState<string>("");
     const [tableData, setTableData] = useState<DurableObjectData>({ data: [], columns: [] });
+    const [rpcMethods, setRpcMethods] = useState<DurableObjectRpc[]>([]);
+    const [showTableSwitch, setShowTableSwitch] = useState<boolean>(true);
 
     useEffect(() => {
         fetch("/api/projects")
@@ -31,7 +34,6 @@ function DurableObjects() {
             .then(data => {
                 for (const project of data.projects) {
                     for (const binding of project.bindings || []) {
-                        console.log(`Project: ${project.name}, Binding: ${binding.type}`);
                         if (binding.type === "durable_objects") {
                             setProjects({ projects: [...projects.projects, project] });
                         }
@@ -60,6 +62,12 @@ function DurableObjects() {
             .then(data => {
                 setDurableObjects(data);
             });
+
+        fetch(`/api/durable-objects/rpc?project=${value}`)
+            .then(res => res.json())
+            .then(data => {
+                setRpcMethods(data);
+            });
     }
 
     const handleSelectTable = (value: string) => {
@@ -70,6 +78,14 @@ function DurableObjects() {
             .then(data => {
                 setTableData(data);
             });
+    }
+
+    const handleTabsChange = (value: string) => {
+        if (value === "data" || value === "schema") {
+            setShowTableSwitch(true);
+        } else {
+            setShowTableSwitch(false);
+        }
     }
 
     const selectedDurableObjectItem = durableObjects.find(durableObject => durableObject.name === selectedDurableObject);
@@ -101,22 +117,25 @@ function DurableObjects() {
                     </SelectContent>
                 </Select>
             </div>
-            <Tabs defaultValue="data" className="w-full">
+            <Tabs defaultValue="data" className="w-full" onValueChange={handleTabsChange}>
                 <div className="flex items-center justify-between">
                     <TabsList className="mr-auto">
                         <TabsTrigger value="data">Data</TabsTrigger>
                         <TabsTrigger value="schema">Schema</TabsTrigger>
+                        <TabsTrigger value="rpc">RPC Methods</TabsTrigger>
                     </TabsList>
-                    <Select value={selectedTable} onValueChange={handleSelectTable} disabled={!selectedDurableObject}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a table" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {selectedDurableObjectItem?.tables.map(table => (
-                                <SelectItem key={table.name} value={table.name}>{table.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {showTableSwitch && (
+                        <Select value={selectedTable} onValueChange={handleSelectTable} disabled={!selectedDurableObject}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {selectedDurableObjectItem?.tables.map(table => (
+                                    <SelectItem key={table.name} value={table.name}>{table.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                 </div>
                 <TabsContent value="data">
                     <div className="flex flex-col gap-y-4">
@@ -159,6 +178,19 @@ function DurableObjects() {
                             </TableBody>
                         </Table>
                     </div>
+                </TabsContent>
+                <TabsContent value="rpc">
+                    {rpcMethods.map(rpcMethod => (
+                        <div key={rpcMethod.className}>
+                            <h3 className="text-lg font-semibold mb-2">{rpcMethod.className}</h3>
+                            <p className="text-sm text-muted-foreground mb-2">{rpcMethod.filePath}</p>
+                            <div>
+                                {rpcMethod.methods.map(method => (
+                                    <div key={method.name} className="mb-2">{method.name}<span className="text-muted-foreground">(</span>{method.parameters.map(parameter => parameter.name).join(", ")}<span className="text-muted-foreground">)</span>: <span className="text-orange-500">{method.returnType}</span></div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </TabsContent>
             </Tabs>
         </div >

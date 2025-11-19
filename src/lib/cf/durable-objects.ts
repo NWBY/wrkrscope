@@ -75,8 +75,6 @@ export const queryDoDb = async (path: string, db: string, table: string): Promis
         type: c.type
     }));
 
-    console.log(columnsType);
-
     return {
         columns: columnsType,
         data: data

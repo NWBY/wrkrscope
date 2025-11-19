@@ -8,6 +8,7 @@ import packageJson from "../package.json";
 import { getProjects } from "./lib/cf/projects";
 import { getD1, queryD1Db, type D1Response } from "./lib/cf/d1";
 import { getDurableObjectsSql, queryDoDb, type DurableObjectResponse } from "./lib/cf/durable-objects";
+import { extractRpcFromDirectory } from "./lib/rpc-extract";
 
 const { values, positionals } = parseArgs({
     args: Bun.argv,
@@ -117,6 +118,30 @@ if (positionals.length == 2) {
                 }
 
                 return Response.json(durableObjects);
+            },
+            "/api/durable-objects/rpc": async req => {
+                console.log("🔍 RPC extraction endpoint called");
+                const url = new URL(req.url);
+                const project = url.searchParams.get("project") || "";
+                console.log("📁 Project path:", project);
+
+                if (!project) {
+                    console.error("❌ No project specified");
+                    return Response.json([]);
+                }
+
+                try {
+                    const srcPath = `${project}/src`;
+                    console.log("🔎 Scanning directory:", srcPath);
+                    const rpcResults = await extractRpcFromDirectory(srcPath);
+                    console.log("✅ Found", rpcResults.length, "DurableObject classes");
+                    console.log("📊 Results:", JSON.stringify(rpcResults, null, 2));
+                    return Response.json(rpcResults);
+                } catch (error) {
+                    console.error("❌ Error extracting RPC methods:", error);
+                    console.error("Stack:", error instanceof Error ? error.stack : String(error));
+                    return Response.json({ error: String(error) }, { status: 500 });
+                }
             },
             "/api/ws": async req => {
                 // upgrade the request to a WebSocket

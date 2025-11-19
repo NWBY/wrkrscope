@@ -59,8 +59,6 @@ const items = [
 export function AppSidebar() {
     const location = useLocation()
 
-    console.log(location.pathname);
-
     return (
         <Sidebar variant="inset">
             <SidebarContent>

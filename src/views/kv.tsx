@@ -2,8 +2,10 @@ import { rootRoute } from "@/App";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { KVResponse } from "@/lib/cf/kv";
 import type { ProjectResponse } from "@/lib/cf/projects";
+import { formatDate } from "@/lib/date";
 import type { KvParams } from "@/lib/param";
 import { createRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -90,6 +92,8 @@ function KV() {
                     <TableRow>
                         <TableHead>Key</TableHead>
                         <TableHead>Value</TableHead>
+                        <TableHead>Expiration</TableHead>
+                        <TableHead>Metadata</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -97,6 +101,19 @@ function KV() {
                         <TableRow key={value.key}>
                             <TableCell className="font-medium">{value.key}</TableCell>
                             <TableCell>{value.value}</TableCell>
+                            <TableCell>
+                                <Tooltip>
+                                    <TooltipTrigger>{value.expiration}</TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{formatDate(value.expiration ?? 0)}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TableCell>
+                            <TableCell>{value.metadata ? Object.entries(JSON.parse(value.metadata)).map(([key, value]) => (
+                                <div key={key}>
+                                    <p>{key}: {typeof value === "string" ? value : JSON.stringify(value)}</p>
+                                </div>
+                            )) : ''}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

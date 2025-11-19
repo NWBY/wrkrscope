@@ -209,7 +209,7 @@ if (positionals.length == 2) {
             process.exit(0);
 
         case "version":
-            console.log(packageJson.version);
+            console.log(`v${packageJson.version}`);
             process.exit(0);
         case "config":
             const configResult = await getConfig();

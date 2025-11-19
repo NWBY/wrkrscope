@@ -11,6 +11,8 @@ interface KVEntry {
 interface KVValue {
     key: string;
     value: string;
+    expiration?: number;
+    metadata?: string;
 }
 
 export interface KVResponse {
@@ -51,7 +53,9 @@ export const getKV = async (path: string): Promise<KVResponse[]> => {
                 const value = await Bun.file(path + "/.wrangler/state/v3/kv/" + binding.id + "/blobs/" + entry.blob_id).text();
                 finalEntries.push({
                     key: entry.key,
-                    value: value
+                    value: value,
+                    expiration: entry.expiration,
+                    metadata: entry.metadata
                 });
             }
         }

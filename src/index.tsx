@@ -25,76 +25,58 @@ const { values, positionals } = parseArgs({
 if (positionals.length == 2) {
 
 
-    const requests: RequestResponse = {
-        requests: [],
-        total: 0
-    };
-
     const wsClients = new Set<ServerWebSocket<any>>();
 
     // Initialize traffic capture
-    const capture = new TrafficCapture({
-        onRequest: (request: StoredRequest) => {
-            console.log("Captured request:", JSON.stringify(request, null, 2));
-            requests.requests.unshift(request);
-            requests.total += 1;
+    const capture = new TrafficCapture();
 
-            // Broadcast to all websocket clients
-            const message = JSON.stringify({
-                type: "new_request",
-                request: request,
-            });
-            wsClients.forEach((client) => {
-                try {
-                    client.send(message);
-                } catch (error) {
-                    console.error("Error sending websocket message:", error);
-                }
-            });
-        },
-        onResponse: (request: StoredRequest) => {
-            // Find the existing request (it's already updated by reference in the parser)
-            const index = requests.requests.findIndex((r) => r.id === request.id);
-            if (index === -1) {
-                // If not found, add it (shouldn't happen normally, but handle edge case)
-                requests.requests.unshift(request);
-                requests.total += 1;
+    // Poll for new requests and broadcast via websocket
+    let lastRequestCount = 0;
+    const sentResponseIds = new Set<string>();
+    setInterval(() => {
+        const currentRequests = capture.getRequests();
+        if (currentRequests.total > lastRequestCount) {
+            // New requests were added
+            const newRequests = currentRequests.requests.slice(0, currentRequests.total - lastRequestCount);
+            for (const request of newRequests) {
+                const message = JSON.stringify({
+                    type: "new_request",
+                    request: request,
+                });
+                wsClients.forEach((client) => {
+                    try {
+                        client.send(message);
+                    } catch (error) {
+                        console.error("Error sending websocket message:", error);
+                    }
+                });
             }
+            lastRequestCount = currentRequests.total;
+        }
 
-            // Broadcast to all websocket clients
-            const message = JSON.stringify({
-                type: "response_received",
-                requestId: request.id,
-                response: {
-                    status: request.responseStatus,
-                    headers: request.responseHeaders,
-                    body: request.responseBody,
-                },
-            });
-            wsClients.forEach((client) => {
-                try {
-                    client.send(message);
-                } catch (error) {
-                    console.error("Error sending websocket message:", error);
-                }
-            });
-        },
-        onError: (error: Error) => {
-            console.error("Capture error:", error.message);
-            // Broadcast error to websocket clients
-            const message = JSON.stringify({
-                type: "capture_error",
-                error: error.message,
-            });
-            wsClients.forEach((client) => {
-                try {
-                    client.send(message);
-                } catch (error) {
-                    console.error("Error sending websocket message:", error);
-                }
-            });
-        },
-    });
+        // Check for updated responses that haven't been sent yet
+        for (const request of currentRequests.requests) {
+            if (request.responseStatus && request.id && !sentResponseIds.has(request.id)) {
+                const message = JSON.stringify({
+                    type: "response_received",
+                    requestId: request.id,
+                    response: {
+                        status: request.responseStatus,
+                        headers: request.responseHeaders,
+                        body: request.responseBody,
+                    },
+                });
+                wsClients.forEach((client) => {
+                    try {
+                        client.send(message);
+                    } catch (error) {
+                        console.error("Error sending websocket message:", error);
+                    }
+                });
+                sentResponseIds.add(request.id);
+            }
+        }
+    }, 100); // Poll every 100ms
 
     const server = serve({
         routes: {
@@ -107,6 +89,8 @@ if (positionals.length == 2) {
             },
 
             "/api/requests": async req => {
+                const requests = capture.getRequests();
+                console.log(`/api/requests called. Total: ${requests.total}, Array length: ${requests.requests.length}`);
                 return Response.json(requests);
             },
 
@@ -196,9 +180,12 @@ if (positionals.length == 2) {
                     const url = new URL(req.url);
                     const port = parseInt(url.searchParams.get("port") || "8787", 10);
 
+                    console.log(`Starting capture on port ${port}`);
                     await capture.start(port);
+                    console.log("Capture started successfully");
                     return Response.json({ success: true, message: "Capture started" });
                 } catch (error) {
+                    console.error("Error starting capture:", error);
                     return Response.json(
                         {
                             success: false,

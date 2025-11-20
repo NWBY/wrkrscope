@@ -37,14 +37,14 @@ function extractValue(layer: any): string | null {
 function extractHeaders(layers: any, prefix: string): Record<string, string> {
     const headers: Record<string, string> = {};
     const headerLayer = layers[`${prefix}.header`];
-    
+
     if (headerLayer && typeof headerLayer === "object") {
         Object.entries(headerLayer).forEach(([key, value]) => {
             // Keys are like "http.request.header.host" or "http.response.header.content_type"
             // Extract the header name (everything after the last dot)
             const parts = key.split(".");
             if (parts.length > 0) {
-                const headerName = parts[parts.length - 1].toLowerCase();
+                const headerName = parts[parts.length - 1]?.toLowerCase();
                 const headerValue = extractValue(value);
                 if (headerName && headerValue) {
                     headers[headerName] = headerValue;
@@ -52,19 +52,26 @@ function extractHeaders(layers: any, prefix: string): Record<string, string> {
             }
         });
     }
-    
+
     return headers;
 }
 
-export function parseTsharkLine(line: string): ParsedHttpData | null {
+export function parseTsharkFrame(frame: any): ParsedHttpData | null {
     try {
-        const frame: any = JSON.parse(line);
-        
+        // Log the actual structure we're receiving
+        if (!(globalThis as any).__tshark_structure_logged) {
+            console.log("Sample tshark JSON structure:", JSON.stringify(frame, null, 2).substring(0, 2000));
+            (globalThis as any).__tshark_structure_logged = true;
+        }
+
         // tshark JSON structure: frame._source.layers contains all protocol layers
         const layers = frame._source?.layers;
         if (!layers) {
+            console.log("No layers found in frame._source.layers. Frame keys:", Object.keys(frame));
             return null;
         }
+
+        console.log("Layers keys:", Object.keys(layers).filter(k => k.includes("http")));
 
         // Debug: log structure on first parse to understand format
         if (!(globalThis as any).__tshark_structure_logged) {
@@ -73,7 +80,7 @@ export function parseTsharkLine(line: string): ParsedHttpData | null {
         }
 
         const data: ParsedHttpData = {};
-        
+
         // tshark stores HTTP fields directly in layers with keys like "http.request.method"
         // We need to search through all layer keys to find HTTP-related fields
 
@@ -156,6 +163,8 @@ export function createStoredRequest(
 ): StoredRequest | null {
     const streamId = httpData.stream || "unknown";
     const id = `${streamId}-${httpData.frameNumber || Date.now()}`;
+
+    console.log(`createStoredRequest: ${JSON.stringify(httpData, null, 2)}`);
 
     // If this is a request
     if (httpData.method && httpData.uri) {

@@ -41,9 +41,10 @@ export async function detectCaptureTool(): Promise<CaptureConfig | null> {
         interface: interfaceName,
         args: [
             "-i", interfaceName,
-            "-f", `tcp port 8787`,
-            "-T", "json",
+            "-l", // Flush output after each packet
             "-Y", "http",
+            "-T", "json",
+            "tcp", "port", "8787"
         ],
     };
 }

@@ -31,11 +31,12 @@ const items = [
         identifier: "dashboard",
         icon: LayoutDashboard,
     },
-    // {
-    //     title: "Requests",
-    //     identifier: "requests",
-    //     icon: Inbox,
-    // },
+    {
+        title: "Requests",
+        href: "/requests",
+        identifier: "requests",
+        icon: Inbox,
+    },
     {
         title: "D1",
         href: "/d1",

@@ -13,8 +13,9 @@ import { kvRoute } from "./views/kv";
 import { dashboardRoute } from "./views/dashboard";
 import { d1Route } from "./views/d1";
 import { durableObjectsRoute } from "./views/durable-objects";
+import { requestsRoute } from "./views/requests";
 
-const routeTree = rootRoute.addChildren([dashboardRoute, kvRoute, d1Route, durableObjectsRoute])
+const routeTree = rootRoute.addChildren([dashboardRoute, kvRoute, d1Route, durableObjectsRoute, requestsRoute])
 
 const router = createRouter({ routeTree })
 

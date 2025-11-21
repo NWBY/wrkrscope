@@ -9,6 +9,7 @@ import { getProjects } from "./lib/cf/projects";
 import { getD1, queryD1Db, type D1Response } from "./lib/cf/d1";
 import { getDurableObjectsSql, queryDoDb, type DurableObjectResponse } from "./lib/cf/durable-objects";
 import { extractRpcFromDirectory } from "./lib/rpc-extract";
+import { Capture } from "./lib/capture/capture";
 
 const { values, positionals } = parseArgs({
     args: Bun.argv,
@@ -23,14 +24,8 @@ const { values, positionals } = parseArgs({
 });
 
 if (positionals.length == 2) {
-
-
-    const requests: RequestResponse = {
-        requests: [],
-        total: 0
-    };
-
     const wsClients = new Set<ServerWebSocket<any>>();
+    const capture = new Capture(wsClients);
 
     const server = serve({
         routes: {
@@ -43,7 +38,8 @@ if (positionals.length == 2) {
             },
 
             "/api/requests": async req => {
-                return Response.json(requests);
+                const captures = await capture.getCaptures();
+                return Response.json(captures);
             },
 
             "/api/kv": async req => {
@@ -142,6 +138,10 @@ if (positionals.length == 2) {
                     console.error("Stack:", error instanceof Error ? error.stack : String(error));
                     return Response.json({ error: String(error) }, { status: 500 });
                 }
+            },
+            "/api/capture/start": async req => {
+                capture.start(8787);
+                return Response.json({ message: "Capture started" });
             },
             "/api/ws": async req => {
                 // upgrade the request to a WebSocket

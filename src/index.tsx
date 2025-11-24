@@ -22,6 +22,32 @@ const { values, positionals } = parseArgs({
     allowPositionals: true,
 });
 
+async function findAvailablePort(startPort: number = 3000): Promise<number> {
+    let port = startPort;
+    const maxAttempts = 100; // Limit to prevent infinite loop
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            // Try to create a server on this port
+            const testServer = serve({
+                port,
+                fetch() {
+                    return new Response("test");
+                },
+            });
+            // If successful, stop the test server and return the port
+            testServer.stop();
+            return port;
+        } catch (error) {
+            // Port is in use, try next one
+            console.log(`Port ${port} is in use, trying ${port + 1}...`);
+            port++;
+        }
+    }
+    
+    throw new Error(`Could not find an available port after ${maxAttempts} attempts`);
+}
+
 if (positionals.length == 2) {
 
 
@@ -32,7 +58,10 @@ if (positionals.length == 2) {
 
     const wsClients = new Set<ServerWebSocket<any>>();
 
+    const port = await findAvailablePort(3000);
+
     const server = serve({
+        port,
         routes: {
             // Serve index.html for all unmatched routes.
             "/*": index,

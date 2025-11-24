@@ -24,6 +24,18 @@ const { values, positionals } = parseArgs({
 
 if (positionals.length == 2) {
 
+    // Check if config exists, create it if not and --path is provided
+    const configExistsResult = await configExists();
+    if (!configExistsResult) {
+        if (values.path && values.path.length > 0) {
+            console.log("📝 Config not found, creating with provided paths...");
+            await createConfig(values.path);
+            console.log("✅ Config created successfully");
+        } else {
+            console.error("❌ Config file not found. Please run: wrkrscope init --path=<path-to-project>");
+            process.exit(1);
+        }
+    }
 
     const requests: RequestResponse = {
         requests: [],

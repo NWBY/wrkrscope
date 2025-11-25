@@ -14,6 +14,7 @@ import {
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -22,6 +23,7 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "@tanstack/react-router";
+import { CheckForUpdate } from "./check-for-updates";
 
 // Menu items.
 const items = [
@@ -87,6 +89,13 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <CheckForUpdate />
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
         </Sidebar>
     );
 }

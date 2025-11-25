@@ -48,12 +48,10 @@ export async function extractRpcFromFile(filePath: string): Promise<DurableObjec
         // Find the matching closing brace for the class
         const classBody = extractClassBody(content, classStart);
         if (!classBody) {
-            console.log(`⚠️ Could not extract class body for ${className} in ${filePath}`);
             continue;
         }
 
         const methods = extractMethods(classBody);
-        console.log(`  📝 Class ${className}: found ${methods.length} RPC methods`);
 
         // Include class even if no methods found (might be useful for debugging)
         results.push({
@@ -66,7 +64,6 @@ export async function extractRpcFromFile(filePath: string): Promise<DurableObjec
     if (matchCount === 0) {
         // Check if file contains "DurableObject" at all for debugging
         if (content.includes('DurableObject')) {
-            console.log(`⚠️ File ${filePath} contains "DurableObject" but no matching class found`);
         }
     }
 
@@ -270,13 +267,11 @@ function extractMethods(classBody: string): RpcMethod[] {
  * Recursively scan a directory for TypeScript files and extract RPC methods
  */
 export async function extractRpcFromDirectory(srcPath: string): Promise<DurableObjectRpc[]> {
-    console.log("📂 extractRpcFromDirectory called with path:", srcPath);
     const results: DurableObjectRpc[] = [];
 
     // Check if directory exists
     try {
         await access(srcPath);
-        console.log("✅ Directory exists:", srcPath);
     } catch (error) {
         console.error("❌ Cannot access directory:", srcPath, error);
         throw new Error(`Cannot access directory ${srcPath}: ${error}`);
@@ -288,7 +283,6 @@ export async function extractRpcFromDirectory(srcPath: string): Promise<DurableO
     async function scanDirectory(dir: string): Promise<void> {
         try {
             const entries = await readdir(dir, { withFileTypes: true });
-            console.log(`📋 Found ${entries.length} entries in ${dir}`);
 
             for (const entry of entries) {
                 const fullPath = join(dir, entry.name);
@@ -312,7 +306,6 @@ export async function extractRpcFromDirectory(srcPath: string): Promise<DurableO
                             const rpcResults = await extractRpcFromFile(fullPath);
                             if (rpcResults.length > 0) {
                                 processedCount++;
-                                console.log(`✅ Found ${rpcResults.length} class(es) in ${fullPath}`);
                                 results.push(...rpcResults);
                             }
                         } catch (error) {
@@ -328,6 +321,5 @@ export async function extractRpcFromDirectory(srcPath: string): Promise<DurableO
     }
 
     await scanDirectory(srcPath);
-    console.log(`📊 Scanned ${fileCount} TypeScript files, found ${processedCount} files with DurableObject classes`);
     return results;
 }

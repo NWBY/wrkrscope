@@ -19,8 +19,6 @@ export const CheckForUpdate = () => {
                 const version = latestVersion.replace("v", "");
                 const currentVersion = packageJson.version;
 
-                console.log(version, currentVersion);
-
                 if (version !== currentVersion) {
                     setLatestVersion(latestVersion);
                     setUpdateAvailable(true);

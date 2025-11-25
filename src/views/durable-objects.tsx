@@ -1,4 +1,5 @@
 import { rootRoute } from "@/App";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +10,7 @@ import type { ProjectResponse } from "@/lib/cf/projects";
 import type { KvParams } from "@/lib/param";
 import type { DurableObjectRpc, RpcMethod } from "@/lib/rpc-extract";
 import { createRoute } from "@tanstack/react-router";
+import { RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const durableObjectsRoute = createRoute({
@@ -88,6 +90,14 @@ function DurableObjects() {
         }
     }
 
+    const handleRefreshDurableObjects = () => {
+        fetch(`/api/durable-objects?project=${selectedProject}&db=${selectedDurableObject}&table=${selectedTable}`)
+            .then(res => res.json())
+            .then(data => {
+                setTableData(data);
+            });
+    }
+
     const selectedDurableObjectItem = durableObjects.find(durableObject => durableObject.name === selectedDurableObject);
 
     return (
@@ -118,23 +128,28 @@ function DurableObjects() {
                 </Select>
             </div>
             <Tabs defaultValue="data" className="w-full" onValueChange={handleTabsChange}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-stretch justify-between">
                     <TabsList className="mr-auto">
                         <TabsTrigger value="data">Data</TabsTrigger>
                         <TabsTrigger value="schema">Schema</TabsTrigger>
                         <TabsTrigger value="rpc">RPC Methods</TabsTrigger>
                     </TabsList>
                     {showTableSwitch && (
-                        <Select value={selectedTable} onValueChange={handleSelectTable} disabled={!selectedDurableObject}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a table" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {selectedDurableObjectItem?.tables.map(table => (
-                                    <SelectItem key={table.name} value={table.name}>{table.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-stretch gap-x-2">
+                            <Select value={selectedTable} onValueChange={handleSelectTable} disabled={!selectedDurableObject}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a table" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {selectedDurableObjectItem?.tables.map(table => (
+                                        <SelectItem key={table.name} value={table.name}>{table.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button className="ml-2" onClick={handleRefreshDurableObjects} disabled={!selectedTable}>
+                                <RefreshCcw size={16} />
+                            </Button>
+                        </div>
                     )}
                 </div>
                 <TabsContent value="data">
